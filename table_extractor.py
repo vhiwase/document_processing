@@ -1,4 +1,8 @@
 import pandas as pd
+import numpy as np
+from sklearn.cluster import MeanShift
+from collections import defaultdict
+
 from .structure_extractor import StructureExtractor
 
 TOP_LEFT_X, TOP_LEFT_Y, TOP_RIGHT_X, TOP_RIGHT_Y, \
@@ -128,7 +132,9 @@ class TableExtractor:
             df_table = df_para[~pd.isna(df_para['vertical_mapping'])]
             if not df_table.empty and not any(pd.isna(df_table['table_number'])):
                 df_table = df_para[df_para['table_number']==df_table['table_number'].mode().unique()[0]]
-            key_df = df_table[~pd.isna(df_table['vertical_mapping'])]
+            key_df = df_table[~pd.isna(df_table['vertical_mapping'])]            
+            if len(key_df) < 2:
+                key_df = pd.DataFrame()
             if not key_df.empty :
                 line = key_df['line_number'].unique()[0]        
                 if all(~pd.isna(df_table[df_table['line_number']==line]['vertical_mapping'])):
@@ -168,11 +174,10 @@ class TableExtractor:
                     df_para.loc[table.index, 'parent_table_number']= table_count
                     line_dataframe.loc[table.index, 'parent_table_number']= table_count
                     prev_page = df_para['page'].unique()[0]       
-        
         for page_num in sorted(set(line_dataframe['page'])):
             df_page = line_dataframe[line_dataframe['page']==page_num]
-            #check first 7 line 
-            first_five_lines = sorted(set(df_page['line_number']))[:7]
+            #check first 20 line 
+            first_five_lines = sorted(set(df_page['line_number']))[:20]
             extract_lines = []
             for line_num in first_five_lines:
                 temparary_df = df_page[df_page['line_number']==line_num]
@@ -181,9 +186,11 @@ class TableExtractor:
                 extract_lines.append(line_num)           
             for line_num in extract_lines:
                 temparary_df = df_page[df_page['line_number']==line_num]
-                df_page.loc[temparary_df.index, 'table_number']=None
-                line_dataframe.loc[temparary_df.index, 'table_number']=None     
-
+                if min(temparary_df['column']):
+                    df_page.loc[temparary_df.index, 'table_number']=None
+                    line_dataframe.loc[temparary_df.index, 'table_number']=None
+                else:
+                    break
             starting_indexes = []
             for i in df_page.index:
                 if pd.isna(df_page['table_number'][i]) and not df_page['is_header'][i]:
@@ -212,13 +219,64 @@ class TableExtractor:
                 parent_num_redefined = None
             df_para.loc[key_df.index, 'parent_table_number'] = parent_num_redefined
             line_dataframe.loc[key_df.index, 'parent_table_number'] = parent_num_redefined
+        tab_number = 0
+        for tab_num in sorted(set(line_dataframe[~pd.isna(line_dataframe['table_number'])]["table_number"])):
+            tab_df = line_dataframe[line_dataframe['table_number'] == tab_num]
+            val = tab_df[tab_df['sum_of_column_up_space']==max(tab_df['sum_of_column_up_space'])]['table_identifier'].iloc[0,]
+            truth_values = tab_df['table_identifier']==val
+            truth_values = truth_values.tolist()
+            flag = truth_values and truth_values.pop(0)
+            table_number = []
+            while flag :
+                tab_number += 1
+                while flag is True:
+                    flag = truth_values and truth_values.pop(0)
+                    table_number.append(tab_number)
+                while flag is False:
+                    flag = truth_values and truth_values.pop(0)
+                    table_number.append(tab_number)                                
+            if table_number:
+                line_dataframe.loc[tab_df.index, 'table_number2'] = table_number                
+        line_dataframe['table_number'] = line_dataframe['table_number2']
+        for table_number in sorted(set(line_dataframe['table_number'])):
+            table_dataframe = line_dataframe[line_dataframe['table_number']==table_number]
+            key_dict = defaultdict(list)
+            for k in zip(sorted(set(table_dataframe['column']))):
+                left_x_column = table_dataframe[table_dataframe['column']==k][TOP_LEFT_X].mean()
+                index = table_dataframe[table_dataframe['column']==k].index.tolist()
+                key_dict[left_x_column].extend(index)
+            key_dict = dict(key_dict)
+            key_dict.values()    
+            key = list(key_dict.keys())
+            X = np.array(key).reshape(-1,1)
+            model = MeanShift(n_jobs=-1)
+            if np.any(X):
+                xhat = model.fit_predict(X)
+                my_tuple = []
+                for k, xkey in zip(key, xhat):
+                    my_tuple.append((k, xkey, key_dict[k]))    
+                my_tuple = sorted(my_tuple, key=lambda x: x[0])    
+                my_final_dict = defaultdict(list)
+                for i, my_tup in enumerate(my_tuple):
+                    k, xkey, klist = my_tup
+                    my_final_dict[xkey].extend(klist)        
+                my_dict = {}
+                for i, v in enumerate(my_final_dict.values()):
+                    my_dict[i] = v        
+                for col, index in my_dict.items():
+                    table_dataframe.loc[index, 'column'] = col    
+                line_dataframe.loc[table_dataframe.index, 'column'] = table_dataframe['column'].tolist()
+        line_data = line_dataframe[line_dataframe['is_header']==False]
+        line_data = line_data[line_data['is_footer']==False]
         table_dictionary = {}
-        for parent_num in sorted(filter(None, set(line_dataframe['parent_table_number']))):
-            df_parent = line_dataframe[line_dataframe['parent_table_number']==parent_num]
-            key_df = df_parent[~pd.isna(df_parent['vertical_mapping'])]    
+        for parent_num in sorted(filter(None, set(line_data['parent_table_number']))):
+            df_parent = line_data[line_data['parent_table_number']==parent_num]
+            key_df = df_parent[~pd.isna(df_parent['vertical_mapping'])]
+            if len(key_df) < 2:
+                key_df = pd.DataFrame()
             if not key_df.empty :
                 line = key_df['line_number'].unique()[0]        
-                if all(~pd.isna(line_dataframe[line_dataframe['line_number']==line]['vertical_mapping'])):
+                if all(~pd.isna(line_data[line_data['line_number']==line]['vertical_mapping'])):
                     key_dict = {}
                     for k, v in zip(key_df['column'], key_df[TEXT]):
                         left_x_column = key_df[key_df['column']==k][TOP_LEFT_X].mean()
@@ -235,8 +293,6 @@ class TableExtractor:
                 for table_num in sorted(set(df_para['table_number'])):
                     if not key_dict:
                         break
-                    line_data = line_dataframe[line_dataframe['is_footer']==False]
-                    line_data = line_data[line_data['is_header']==False]
                     table = line_data[line_data['table_number'] == table_num]
                     # define data
                     table_row_left_x = []

@@ -229,6 +229,15 @@ class StructureExtractor:
                 model = AgglomerativeClustering(n_clusters=2)
                 # fit model and predict clusters
                 yhat = model.fit_predict(X)
+                if not df_page.empty:
+                    df_t = df_page[df_page['sum_of_column_up_space']==max(df_page['sum_of_column_up_space'])]['sum_of_column_up_space']
+                    max_val = not df_t.empty and df_t.iloc[0,]
+                    for i, s in zip(df_page.index, df_page['sum_of_column_up_space']):
+                        if s == max_val:
+                            break
+                    index_val = True in list(df_page.index==i) and list(df_page.index==i).index(True)
+                    if not yhat[index_val]:
+                        yhat = (yhat==0).astype(int)
                 df_page['table_identifier'] = yhat
                 line_dataframe.loc[df_page.index, 'table_identifier'] = yhat
             row = []
@@ -337,45 +346,3 @@ class StructureExtractor:
         line_dataframe['is_footer'] = False
         line_dataframe.loc[footer_df.index, 'is_footer'] = True
         return line_dataframe
-
-    # def structure_extraction_combine(self, line_dataframe=None):
-    #     if line_dataframe is None:
-    #         line_dataframe = self.line_dataframe
-    #     line_dataframe = self.structure_extraction(line_dataframe)        
-    #     for page in sorted(set(line_dataframe['page'])):
-    #         page_df = line_dataframe[line_dataframe["page"] == page]
-    #         starting_indexes = []
-    #         for i in page_df.index:
-    #             if pd.isna(page_df['table_number'][i]) and not page_df['is_header'][i]:
-    #                 starting_indexes.append(i)
-    #         if page > 1:
-    #             prev_page_df = line_dataframe[line_dataframe["page"] == page-1]
-    #             distinct_table_numbers = prev_page_df[~pd.isna(prev_page_df['table_number'])]['table_number'].tolist()
-    #             if distinct_table_numbers:
-    #                 line_dataframe.loc[starting_indexes, 'table_number']  = max(distinct_table_numbers)
-    #         self.line_dataframe = line_dataframe
-    #     return line_dataframe
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            

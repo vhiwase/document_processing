@@ -4,5 +4,6 @@ __pycache__
 token
 build/
 dist/
-matrix_rotation.egg-info/
+document_processing.egg-info/
 pypi.jpeg
+document_processing/secret/*

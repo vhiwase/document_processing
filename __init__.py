@@ -1,7 +1,3 @@
-from .azure_api import *
-from .structure_extractor import *
-from .table_extractor import *
+from .document_processing import *
 
-__all__ = (azure_api.__all__,
-           structure_extractor.__all__,
-           table_extractor.__all__)
+__all__ = document_processing.__all__

@@ -1,2 +1,2 @@
-from document_processing import main
+from .document_processing import main
 main()

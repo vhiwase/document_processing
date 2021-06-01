@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.cluster import MeanShift
 from collections import defaultdict
 
-from structure_extractor import StructureExtractor
+from .structure_extractor import StructureExtractor
 
 TOP_LEFT_X, TOP_LEFT_Y, TOP_RIGHT_X, TOP_RIGHT_Y, \
 BOTTOM_RIGHT_X, BOTTOM_RIGHT_Y, BOTTOM_LEFT_X, \

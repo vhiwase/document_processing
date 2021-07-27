@@ -6,3 +6,4 @@ build/
 dist/
 document_processing.egg-info/
 pypi.jpeg
+document_processing/secret/*

@@ -1,0 +1,29 @@
+Links to download sample document without border:
+
+Links: https://govtribe.com/file/government-file/n0042112r0004-n00421-12-r-0004-dot-doc-1
+Reference: document_processing/tests/samples/sample1.pdf
+
+
+Description: We have taken page 4 of above document as a sample of borderless document 
+
+--------------------------------------------------------------------------
+
+Link to download sample document with border:
+
+PART1
+-----
+
+Link: https://govtribe.com/file/government-file/s02-special-projects-saas-36c10b20q0509-final-dot-pdf?__cf_chl_captcha_tk__=87531cd5edbf058c827bb8a17dbf56e0c6b5fba7-1622379813-0-AWKpTVwX
+Reference: document_processing/tests/samples/sample2.pdf
+
+Description: We have taken page 7 and page 8 of the document as a sample of table whose rows are splitted into two different pages
+
+
+PART2 
+-----
+https://www.nsf.gov/policies/contracts/asc/contract_award_sf_33_and_sections_a_through_j_through_section_j_table_of_contents_1_redacted.pdf
+Reference: document_processing/tests/samples/sample3.pdf
+
+Description: Here we have used page 3 and page 4 as a sample document to show you how document processing  algorithm works well on complex document as welll  
+
+---------------------------------------------------------------------------
